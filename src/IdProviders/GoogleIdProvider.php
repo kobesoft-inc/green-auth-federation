@@ -47,10 +47,10 @@ class GoogleIdProvider extends BaseIdProvider
     public function getLoginAction(): Action
     {
         return Action::make('google_login')
-            ->label(__('green-auth-federation::federation.actions.login_with_google_workspace'))
+            ->label(__('green-auth-federation::federation.actions.login_with_google'))
             ->icon($this->getIcon())
             ->url($this->getRedirectUrl())
-            ->color('blue');
+            ->color('gray');
     }
 
     /**

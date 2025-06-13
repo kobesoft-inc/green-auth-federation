@@ -65,7 +65,7 @@ class GreenAuthFederationServiceProvider extends ServiceProvider
     {
         // ログインフォーム前にフェデレーション認証ボタンを表示
         FilamentView::registerRenderHook(
-            PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE,
+            PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
             fn(): string => app(FederationButtonRenderer::class)->renderForCurrentGuard()
         );
     }

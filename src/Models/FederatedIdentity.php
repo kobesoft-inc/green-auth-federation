@@ -100,15 +100,13 @@ class FederatedIdentity extends Model
      * 
      * プロバイダー側でアバターが更新されたことを検出するために使用
      * 
-     * @param string $avatarUrl アバター画像のURL
+     * @param string $avatarHash プロバイダーから提供されたアバターハッシュ
      * @return bool ハッシュが更新された場合true
      */
-    public function updateAvatarHash(string $avatarUrl): bool
+    public function updateAvatarHash(string $avatarHash): bool
     {
-        $newHash = hash('sha256', $avatarUrl);
-
-        if ($this->avatar_hash !== $newHash) {
-            $this->update(['avatar_hash' => $newHash]);
+        if ($this->avatar_hash !== $avatarHash) {
+            $this->update(['avatar_hash' => $avatarHash]);
             return true; // ハッシュが変更された
         }
 

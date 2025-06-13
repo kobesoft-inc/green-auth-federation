@@ -44,6 +44,7 @@ class FederationController
      *
      * @param string $driver 認証ドライバー名
      * @return RedirectResponse ログイン後のリダイレクトレスポンス
+     * @throws Exception
      */
     public function callback(string $driver): RedirectResponse
     {
@@ -82,18 +83,17 @@ class FederationController
         $this->updateAvatarIfChanged($user, $federatedIdentity, $provider, $socialiteUser);
 
         // トークン情報を更新
-        $federatedIdentity->updateTokens(
-            $socialiteUser->token,
-            $socialiteUser->refreshToken,
-            $socialiteUser->expiresIn ? now()->addSeconds($socialiteUser->expiresIn) : null
-        );
+        $accessToken = $socialiteUser->token;
+        $refreshToken = $socialiteUser->refreshToken ?? null;
+        $expiresAt = $socialiteUser->expiresIn ? now()->addSeconds($socialiteUser->expiresIn) : null;
+        $federatedIdentity->updateTokens($accessToken, $refreshToken, $expiresAt);
 
         // プロバイダーデータを更新
         $federatedIdentity->provider_data = $socialiteUser->getRaw();
-
-        // 保存
-        $user->save();
         $federatedIdentity->save();
+
+        // ユーザー情報を保存
+        $user->save();
 
         // ログインする
         Filament::auth()->login($user);
@@ -163,14 +163,14 @@ class FederationController
             return;
         }
 
-        // アバターURLからハッシュを生成
-        $avatarUrl = $socialiteUser->getAvatar();
-        if (!$avatarUrl) {
+        // プロバイダーからアバターハッシュを取得
+        $avatarHash = $provider->getAvatarHash($socialiteUser);
+        if (!$avatarHash) {
             return;
         }
 
         // ハッシュが変更された場合のみアバターを更新
-        if ($federatedIdentity->updateAvatarHash($avatarUrl)) {
+        if ($federatedIdentity->updateAvatarHash($avatarHash)) {
             $this->storeAvatarFromProvider($user, $provider, $socialiteUser);
         }
     }
@@ -183,8 +183,7 @@ class FederationController
      */
     private function hasAvatarTrait($user): bool
     {
-        return method_exists($user, 'getAvatarUrl') &&
-            method_exists($user, 'storeAvatar');
+        return method_exists($user, 'getAvatarUrl') && method_exists($user, 'storeAvatar');
     }
 
     /**
@@ -197,7 +196,7 @@ class FederationController
      */
     private function storeAvatarFromProvider($user, $provider, SocialiteUser $socialiteUser): void
     {
-        // アバター画像データを取得
+        // プロバイダーからアバター画像データを取得
         $avatarData = $provider->getAvatarImageData($socialiteUser);
 
         if (!$avatarData) {

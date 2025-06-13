@@ -22,7 +22,8 @@ return [
 
     'actions' => [
         'login_with_microsoft' => 'Sign in with Microsoft',
-        'login_with_google_workspace' => 'Sign in with Google Workspace',
         'login_with_google' => 'Sign in with Google',
     ],
+
+    'or' => 'or',
 ];

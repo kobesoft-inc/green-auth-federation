@@ -23,4 +23,6 @@ return [
         'login_with_microsoft' => 'Microsoftでログイン',
         'login_with_google' => 'Googleでログイン',
     ],
+
+    'or' => 'または',
 ];
