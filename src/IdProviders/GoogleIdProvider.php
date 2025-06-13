@@ -6,6 +6,7 @@ use Filament\Actions\Action;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\HtmlString;
+use Laravel\Socialite\Contracts\Provider as SocialiteProvider;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 
 /**
@@ -53,19 +54,25 @@ class GoogleIdProvider extends BaseIdProvider
     }
 
     /**
+     * 認証プロバイダーの生成
+     */
+    protected function createSocialiteProvider(): SocialiteProvider
+    {
+        $provider = parent::createSocialiteProvider();
+        if ($this->hostedDomain) {
+            $provider->with(['hd' => $this->hostedDomain]);
+        }
+        return $provider;
+    }
+
+    /**
      * 認証プロバイダーにリダイレクト
      */
     public function redirect(): RedirectResponse
     {
         $provider = $this->getProvider()
             ->with(['access_type' => 'offline', 'prompt' => 'consent select_account'])
-            ->scopes(['openid', 'profile', 'email', ...$this->scopes])
-            ->stateless();
-
-        // ホストドメインが設定されている場合、hd パラメータを追加
-        if ($this->hostedDomain) {
-            $provider->with(['hd' => $this->hostedDomain]);
-        }
+            ->scopes(['openid', 'profile', 'email', ...$this->scopes]);
 
         return $provider->redirect();
     }

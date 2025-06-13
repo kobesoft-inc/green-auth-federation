@@ -95,7 +95,7 @@ class FederationController
         $user->save();
         $federatedIdentity->save();
 
-        // ログインする（Laravel標準のLoginイベントが自動的に発火される）
+        // ログインする
         Filament::auth()->login($user);
 
         // セッションを再生成する
@@ -184,7 +184,7 @@ class FederationController
     private function hasAvatarTrait($user): bool
     {
         return method_exists($user, 'getAvatarUrl') &&
-               method_exists($user, 'storeAvatar');
+            method_exists($user, 'storeAvatar');
     }
 
     /**

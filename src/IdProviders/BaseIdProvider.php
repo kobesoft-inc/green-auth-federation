@@ -187,10 +187,27 @@ abstract class BaseIdProvider
     public function getProvider(): SocialiteProvider
     {
         if ($this->socialiteProvider === null) {
-            $this->socialiteProvider = Socialite::driver(static::getDriver())
-                ->setConfig($this->getSocialiteConfig());
+            $this->socialiteProvider = $this->createSocialiteProvider();
         }
         return $this->socialiteProvider;
+    }
+
+    /**
+     * Socialiteプロバイダーを作成
+     */
+    protected function createSocialiteProvider(): SocialiteProvider
+    {
+        $driver = static::getDriver();
+        $config = $this->getSocialiteConfig();
+
+        // サービス設定が存在するかチェック
+        $serviceConfigKey = "services.{$driver}";
+        if (config($serviceConfigKey, null) === null) {
+            config([$serviceConfigKey => $config->get()]);
+        }
+        return Socialite::driver($driver)
+            ->setConfig($config)
+            ->stateless();
     }
 
     /**

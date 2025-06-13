@@ -30,12 +30,12 @@ class MicrosoftEntraIdProvider extends BaseIdProvider
     /**
      * テナントIDを設定
      *
-     * @param string $tenantId Microsoft EntraテナントID
+     * @param string $tenant Microsoft EntraテナントID
      * @return static
      */
-    public function tenantId(string $tenantId): static
+    public function tenant(string $tenant): static
     {
-        $this->config['tenantId'] = $tenantId;
+        $this->config['tenant'] = $tenant;
         return $this;
     }
 
@@ -59,7 +59,6 @@ class MicrosoftEntraIdProvider extends BaseIdProvider
         return $this->getProvider()
             ->with(['prompt' => 'select_account'])
             ->scopes(['openid', 'profile', 'email', 'offline_access', 'User.Read', ...$this->scopes])
-            ->stateless()
             ->redirect();
     }
 
