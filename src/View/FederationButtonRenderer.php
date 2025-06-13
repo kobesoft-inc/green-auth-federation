@@ -2,24 +2,26 @@
 
 namespace Green\Auth\View;
 
-use Green\Auth\Facades\IdProviderManager;
+use Green\Auth\GreenAuthFederationPlugin;
 
 /**
  * フェデレーション認証ボタンレンダラー
  * 
- * ログインページでのフェデレーション認証ボタンの表示を担当
+ * ログインページでのフェデレーション認証ボタンの表示を担当。
+ * 現在のFilamentパネルのプラグインからIDプロバイダーを取得します。
  */
 class FederationButtonRenderer
 {
     /**
-     * 指定されたガードのフェデレーション認証ボタンをレンダリング
+     * フェデレーション認証ボタンをレンダリング
+     * 
+     * 現在のパネルのGreenAuthFederationPluginからIDプロバイダーを取得します。
      *
-     * @param string $guard ガード名
      * @return string レンダリングされたHTML
      */
-    public function render(string $guard): string
+    public function render(): string
     {
-        $providers = IdProviderManager::all($guard);
+        $providers = $this->getProvidersFromCurrentPanel();
 
         if (empty($providers)) {
             return '';
@@ -37,12 +39,35 @@ class FederationButtonRenderer
 
     /**
      * 現在のガードのフェデレーション認証ボタンをレンダリング
+     * 
+     * 既存のメソッド呼び出しとの互換性のため、render()を呼び出します。
      *
      * @return string レンダリングされたHTML
      */
     public function renderForCurrentGuard(): string
     {
-        $guard = filament()->getAuthGuard();
-        return $this->render($guard);
+        return $this->render();
     }
+
+    /**
+     * 現在のパネルのプラグインからIDプロバイダーを取得
+     * 
+     * @return array<string, \Green\Auth\IdProviders\BaseIdProvider> IDプロバイダー配列
+     */
+    protected function getProvidersFromCurrentPanel(): array
+    {
+        $currentPanel = filament()->getCurrentPanel();
+        if (!$currentPanel) {
+            return [];
+        }
+
+        if (!$currentPanel->hasPlugin('green-auth-idp')) {
+            return [];
+        }
+
+        /** @var GreenAuthFederationPlugin $plugin */
+        $plugin = $currentPanel->getPlugin('green-auth-idp');
+        return $plugin->getIdProviders();
+    }
+
 }

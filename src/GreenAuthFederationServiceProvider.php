@@ -4,19 +4,37 @@ namespace Green\Auth;
 
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
-use Green\Auth\Services\IdProviderManager;
 use Green\Auth\View\FederationButtonRenderer;
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * Green認証フェデレーションサービスプロバイダー
+ * 
+ * 認証フェデレーション機能に必要なサービス、ビュー、言語ファイルなどを登録します。
+ * また、Filamentパネルのログインフォームにフェデレーション認証ボタンを追加します。
+ */
 class GreenAuthFederationServiceProvider extends ServiceProvider
 {
+    /**
+     * サービスの登録
+     * 
+     * フェデレーション認証に必要なサービスを登録します。
+     * 
+     * @return void
+     */
     public function register(): void
     {
-        $this->app->singleton('green-auth.federation.id-provider-manager', function () {
-            return new IdProviderManager();
-        });
+        // IdProviderManagerはGreenAuthFederationPluginで管理されるため、ここでの登録は不要
     }
 
+    /**
+     * サービスのブート処理
+     * 
+     * マイグレーション、言語ファイル、ビューファイルの読み込み、
+     * レンダーフックの登録、言語ファイルの公開設定を行います。
+     * 
+     * @return void
+     */
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
@@ -32,6 +50,14 @@ class GreenAuthFederationServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * レンダーフックの登録
+     * 
+     * Filamentパネルのログインフォームにフェデレーション認証ボタンを表示するための
+     * レンダーフックを登録します。
+     * 
+     * @return void
+     */
     protected function registerRenderHooks(): void
     {
         // ログインフォーム前にフェデレーション認証ボタンを表示

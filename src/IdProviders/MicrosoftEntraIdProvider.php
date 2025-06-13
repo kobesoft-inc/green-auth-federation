@@ -16,7 +16,7 @@ use Laravel\Socialite\Contracts\Provider as SocialiteProvider;
  */
 class MicrosoftEntraIdProvider extends BaseIdProvider
 {
-    protected static ?string $driver = 'microsoft-azure';
+    protected static ?string $driver = 'azure';
     protected ?string $tenantId = null;
 
     /**
@@ -45,18 +45,18 @@ class MicrosoftEntraIdProvider extends BaseIdProvider
     public function getLoginAction(): Action
     {
         $icon = $this->getIcon();
-        
+
         $action = Action::make('microsoft_login')
             ->label(__('green-auth-federation::federation.actions.login_with_microsoft'))
             ->url($this->getRedirectUrl())
             ->color('gray');
-            
+
         if ($icon) {
             $action->icon($icon);
         } else {
             $action->icon('heroicon-o-building-office');
         }
-        
+
         return $action;
     }
 

@@ -2,7 +2,8 @@
 
 namespace Green\Auth\Http\Controllers;
 
-use Green\Auth\Facades\IdProviderManager;
+use Exception;
+use Green\Auth\GreenAuthFederationPlugin;
 use Green\Auth\Models\FederatedIdentity;
 use Green\Auth\IdProviders\BaseIdProvider;
 use Illuminate\Auth\EloquentUserProvider;
@@ -16,7 +17,7 @@ use RuntimeException;
 
 /**
  * フェデレーション認証コントローラー
- * 
+ *
  * 外部認証プロバイダー（Google、Microsoft等）との連携を処理
  */
 class FederationController
@@ -29,12 +30,12 @@ class FederationController
      */
     public function redirect(string $driver): RedirectResponse
     {
-        $provider = IdProviderManager::get(Filament::getAuthGuard(), $driver);
-        
+        $provider = $this->getIdProvider($driver);
+
         if (!$provider) {
             abort(404, __('green-auth-federation::federation.errors.provider_not_found', ['driver' => $driver]));
         }
-        
+
         return $provider->redirect();
     }
 
@@ -47,18 +48,18 @@ class FederationController
     public function callback(string $driver): RedirectResponse
     {
         // 認証サービスを取得する
-        $provider = IdProviderManager::get(Filament::getAuthGuard(), $driver);
-        
+        $provider = $this->getIdProvider($driver);
+
         if (!$provider) {
             abort(404, __('green-auth-federation::federation.errors.provider_not_found', ['driver' => $driver]));
         }
 
         // 認証ユーザーを取得する
         $socialiteUser = $provider->getAuthenticatedUser();
-        
+
         // フェデレーション認証情報を取得または作成
         $federatedIdentity = $this->getFederatedIdentity($provider, $socialiteUser);
-        
+
         // ローカルユーザーを取得または作成
         $user = $federatedIdentity->authenticatable;
         if (!$user) {
@@ -66,7 +67,7 @@ class FederationController
             if (!$user) {
                 abort(403, __('green-auth-federation::federation.errors.login_not_permitted'));
             }
-            
+
             // フェデレーション認証情報とユーザーを関連付け
             $federatedIdentity->authenticatable()->associate($user);
         }
@@ -130,11 +131,11 @@ class FederationController
     {
         $userClass = $this->getAuthProviderModel();
         $user = $userClass::where('email', $socialiteUser->getEmail())->first();
-        
+
         if ($user) {
             return $user; // 既存のユーザー
         }
-        
+
         if ($provider->shouldAutoCreateUser()) {
             // 新規ユーザーを作成する
             $mappedData = $provider->mapUser($socialiteUser);
@@ -142,7 +143,7 @@ class FederationController
             $user->save();
             return $user;
         }
-        
+
         return null; // ログインできない
     }
 
@@ -151,7 +152,7 @@ class FederationController
      *
      * @param mixed $user ユーザーモデル
      * @param FederatedIdentity $federatedIdentity フェデレーション認証情報
-     * @param \Green\Auth\IdProviders\BaseIdProvider $provider 認証プロバイダー
+     * @param BaseIdProvider $provider 認証プロバイダー
      * @param SocialiteUser $socialiteUser Socialiteユーザー
      * @return void
      */
@@ -182,7 +183,7 @@ class FederationController
      */
     private function hasAvatarTrait($user): bool
     {
-        return method_exists($user, 'getAvatarUrl') && 
+        return method_exists($user, 'getAvatarUrl') &&
                method_exists($user, 'storeAvatar');
     }
 
@@ -190,7 +191,7 @@ class FederationController
      * プロバイダーからアバターを取得してstoreAvatarを使用して保存
      *
      * @param mixed $user HasAvatarトレイトを持つユーザーモデル
-     * @param \Green\Auth\IdProviders\BaseIdProvider $provider 認証プロバイダー
+     * @param BaseIdProvider $provider 認証プロバイダー
      * @param SocialiteUser $socialiteUser Socialiteユーザー
      * @return void
      */
@@ -198,7 +199,7 @@ class FederationController
     {
         // アバター画像データを取得
         $avatarData = $provider->getAvatarImageData($socialiteUser);
-        
+
         if (!$avatarData) {
             return;
         }
@@ -225,7 +226,7 @@ class FederationController
 
             // HasAvatarトレイトのstoreAvatarメソッドを使用
             $user->storeAvatar($uploadedFile);
-            
+
         } finally {
             // 一時ファイルを削除
             if (file_exists($tempPath)) {
@@ -262,11 +263,11 @@ class FederationController
         if (!extension_loaded('fileinfo')) {
             return null;
         }
-        
+
         $finfo = finfo_open();
         $mimeType = finfo_buffer($finfo, $contents, FILEINFO_MIME_TYPE);
         finfo_close($finfo);
-        
+
         return match ($mimeType) {
             'image/jpeg' => 'jpg',
             'image/png' => 'png',
@@ -285,11 +286,32 @@ class FederationController
     {
         $guard = Auth::guard(Filament::getAuthGuard());
         $provider = $guard->getProvider();
-        
+
         if (!$provider instanceof EloquentUserProvider) {
             throw new RuntimeException('The current provider is not an EloquentUserProvider.');
         }
-        
+
         return $provider->getModel();
+    }
+
+    /**
+     * 現在のパネルのプラグインからIDプロバイダーを取得
+     *
+     * @param string $driver ドライバー名
+     * @return BaseIdProvider|null IDプロバイダーインスタンスまたはnull
+     * @throws Exception
+     */
+    protected function getIdProvider(string $driver): ?BaseIdProvider
+    {
+        $currentPanel = filament()->getCurrentPanel();
+
+        if (!$currentPanel || !$currentPanel->hasPlugin('green-auth-idp')) {
+            return null;
+        }
+
+        /** @var GreenAuthFederationPlugin $plugin */
+        $plugin = $currentPanel->getPlugin('green-auth-idp');
+
+        return $plugin->getIdProvider($driver);
     }
 }

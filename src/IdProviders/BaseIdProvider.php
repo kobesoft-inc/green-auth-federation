@@ -28,7 +28,7 @@ abstract class BaseIdProvider
 
     /**
      * ログインアクションを取得
-     * 
+     *
      * @return Action アイコン付きのログインアクション
      */
     abstract public function getLoginAction(): Action;
@@ -50,7 +50,7 @@ abstract class BaseIdProvider
 
     /**
      * プロバイダーのアイコンを取得
-     * 
+     *
      * @return Htmlable|null アイコンのHtmlableオブジェクトまたはnull
      */
     abstract public function getIcon(): ?Htmlable;
@@ -195,8 +195,7 @@ abstract class BaseIdProvider
     public function getProvider(): SocialiteProvider
     {
         if ($this->socialiteProvider === null) {
-            $this->socialiteProvider = Socialite::driver(static::getDriver())
-                ->setConfig($this->getSocialiteConfig());
+            $this->socialiteProvider = Socialite::driver(static::getDriver())->setConfig($this->getSocialiteConfig());
         }
 
         return $this->socialiteProvider;
