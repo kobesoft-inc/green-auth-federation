@@ -6,10 +6,12 @@ use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Green\Auth\View\FederationButtonRenderer;
 use Illuminate\Support\ServiceProvider;
+use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Azure\AzureExtendSocialite;
 
 /**
  * Green認証フェデレーションサービスプロバイダー
- * 
+ *
  * 認証フェデレーション機能に必要なサービス、ビュー、言語ファイルなどを登録します。
  * また、Filamentパネルのログインフォームにフェデレーション認証ボタンを追加します。
  */
@@ -17,9 +19,9 @@ class GreenAuthFederationServiceProvider extends ServiceProvider
 {
     /**
      * サービスの登録
-     * 
+     *
      * フェデレーション認証に必要なサービスを登録します。
-     * 
+     *
      * @return void
      */
     public function register(): void
@@ -29,10 +31,11 @@ class GreenAuthFederationServiceProvider extends ServiceProvider
 
     /**
      * サービスのブート処理
-     * 
+     *
      * マイグレーション、言語ファイル、ビューファイルの読み込み、
-     * レンダーフックの登録、言語ファイルの公開設定を行います。
-     * 
+     * レンダーフックの登録、言語ファイルの公開設定、
+     * Socialiteドライバーの登録を行います。
+     *
      * @return void
      */
     public function boot(): void
@@ -41,6 +44,7 @@ class GreenAuthFederationServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__ . '/../lang', 'green-auth-federation');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'green-auth-federation');
         $this->registerRenderHooks();
+        $this->registerSocialiteDrivers();
 
         // 言語ファイルの公開
         if ($this->app->runningInConsole()) {
@@ -52,10 +56,10 @@ class GreenAuthFederationServiceProvider extends ServiceProvider
 
     /**
      * レンダーフックの登録
-     * 
+     *
      * Filamentパネルのログインフォームにフェデレーション認証ボタンを表示するための
      * レンダーフックを登録します。
-     * 
+     *
      * @return void
      */
     protected function registerRenderHooks(): void
@@ -65,5 +69,20 @@ class GreenAuthFederationServiceProvider extends ServiceProvider
             PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE,
             fn(): string => app(FederationButtonRenderer::class)->renderForCurrentGuard()
         );
+    }
+
+    /**
+     * Socialiteドライバーの登録
+     *
+     * フェデレーション認証で使用するSocialiteドライバー（Azure等）を登録します。
+     *
+     * @return void
+     */
+    protected function registerSocialiteDrivers(): void
+    {
+        // SocialiteProvidersのイベントリスナーを登録
+        $this->app['events']->listen(SocialiteWasCalled::class, [
+            AzureExtendSocialite::class,
+        ]);
     }
 }

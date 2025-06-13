@@ -25,7 +25,7 @@ class FederationController
     /**
      * 認証サービスにリダイレクトする
      *
-     * @param string $driver 認証プロバイダーのドライバー名
+     * @param string $driver 認証ドライバー名
      * @return RedirectResponse 認証プロバイダーへのリダイレクトレスポンス
      */
     public function redirect(string $driver): RedirectResponse
@@ -42,7 +42,7 @@ class FederationController
     /**
      * 認証サービスからのコールバック
      *
-     * @param string $driver 認証プロバイダーのドライバー名
+     * @param string $driver 認証ドライバー名
      * @return RedirectResponse ログイン後のリダイレクトレスポンス
      */
     public function callback(string $driver): RedirectResponse

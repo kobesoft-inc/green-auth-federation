@@ -78,7 +78,7 @@ trait HasIdProviders
     }
 
     /**
-     * 指定されたプロバイダーが存在するかチェック
+     * 指定されたドライバーが存在するかチェック
      *
      * @param string $driver ドライバー名
      * @return bool 存在する場合true

@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Contracts\Provider as SocialiteProvider;
 use Laravel\Socialite\Facades\Socialite;
+use SocialiteProviders\Manager\Config;
 
 abstract class BaseIdProvider
 {
@@ -18,7 +19,7 @@ abstract class BaseIdProvider
     protected bool $autoCreateUser = false;
     protected bool $autoUpdateUser = true;
     protected ?\Closure $userMappingCallback = null;
-    protected array $extraConfig = [];
+    protected array $config = [];
     protected ?SocialiteProvider $socialiteProvider = null;
 
     /**
@@ -94,40 +95,31 @@ abstract class BaseIdProvider
     }
 
     /**
-     * 追加設定を設定
-     */
-    public function extraConfig(array $config): static
-    {
-        $this->extraConfig = $config;
-        return $this;
-    }
-
-    /**
      * Socialite設定を生成
      *
      * プロパティ設定と設定ファイルの両方から設定を取得し、プロパティ設定を優先
      */
-    public function getSocialiteConfig(): array
+    public function getSocialiteConfig(): Config
     {
         // 設定ファイルから基本設定を取得
         $configConfig = $this->getConfigFromFile();
 
-        // プロパティ設定を優先して結合
-        $config = array_merge($configConfig, [
-            'client_id' => $this->clientId ?? $configConfig['client_id'] ?? null,
-            'client_secret' => $this->clientSecret ?? $configConfig['client_secret'] ?? null,
-            'redirect' => $this->getCallbackUrl(),
-        ], $this->extraConfig);
-
-        // 必須項目の検証
-        if (!$config['client_id']) {
+        // clientIdとclientSecretを取得
+        $clientId = $this->clientId ?? $configConfig['client_id'] ?? null;
+        $clientSecret = $this->clientSecret ?? $configConfig['client_secret'] ?? null;
+        if ($clientId === null) {
             throw new \RuntimeException('Client ID is not configured for ' . static::class);
         }
-        if (!$config['client_secret']) {
+        if ($clientSecret === null) {
             throw new \RuntimeException('Client Secret is not configured for ' . static::class);
         }
 
-        return $config;
+        return new Config(
+            $clientId,
+            $clientSecret,
+            $this->getCallbackUrl(),
+            $this->config
+        );
     }
 
     /**
@@ -195,21 +187,10 @@ abstract class BaseIdProvider
     public function getProvider(): SocialiteProvider
     {
         if ($this->socialiteProvider === null) {
-            $this->socialiteProvider = Socialite::driver(static::getDriver())->setConfig($this->getSocialiteConfig());
+            $this->socialiteProvider = Socialite::driver(static::getDriver())
+                ->setConfig($this->getSocialiteConfig());
         }
-
         return $this->socialiteProvider;
-    }
-
-    /**
-     * キャッシュされたプロバイダーをクリア
-     *
-     * 設定変更後に新しいプロバイダーインスタンスを取得したい場合に使用
-     */
-    public function clearProviderCache(): static
-    {
-        $this->socialiteProvider = null;
-        return $this;
     }
 
     /**

@@ -45,20 +45,11 @@ class GoogleIdProvider extends BaseIdProvider
      */
     public function getLoginAction(): Action
     {
-        $icon = $this->getIcon();
-        
-        $action = Action::make('google_login')
+        return Action::make('google_login')
             ->label(__('green-auth-federation::federation.actions.login_with_google_workspace'))
+            ->icon($this->getIcon())
             ->url($this->getRedirectUrl())
             ->color('blue');
-            
-        if ($icon) {
-            $action->icon($icon);
-        } else {
-            $action->icon('heroicon-o-building-office-2');
-        }
-        
-        return $action;
     }
 
     /**
@@ -66,7 +57,10 @@ class GoogleIdProvider extends BaseIdProvider
      */
     public function redirect(): RedirectResponse
     {
-        $provider = $this->getProvider();
+        $provider = $this->getProvider()
+            ->with(['access_type' => 'offline', 'prompt' => 'consent select_account'])
+            ->scopes(['openid', 'profile', 'email', ...$this->scopes])
+            ->stateless();
 
         // ホストドメインが設定されている場合、hd パラメータを追加
         if ($this->hostedDomain) {
@@ -74,32 +68,6 @@ class GoogleIdProvider extends BaseIdProvider
         }
 
         return $provider->redirect();
-    }
-
-    /**
-     * Socialite設定を生成
-     *
-     * Google Cloud Identity固有の設定を含む
-     */
-    public function getSocialiteConfig(): array
-    {
-        $config = parent::getSocialiteConfig();
-
-        // 設定ファイルまたはプロパティからGoogle固有設定を取得
-        $configFromFile = $this->getConfigFromFile();
-
-        $hostedDomain = $this->hostedDomain ?? $configFromFile['hosted_domain'] ?? null;
-
-        if ($hostedDomain) {
-            $config['hosted_domain'] = $hostedDomain;
-        }
-
-        // Google Cloud Identity用のスコープを追加
-        $defaultScopes = ['openid', 'profile', 'email'];
-        $configScopes = $configFromFile['scopes'] ?? [];
-        $config['scopes'] = array_unique(array_merge($defaultScopes, $configScopes, $this->scopes));
-
-        return $config;
     }
 
     /**

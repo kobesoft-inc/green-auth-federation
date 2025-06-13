@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\HtmlString;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Contracts\Provider as SocialiteProvider;
+use SocialiteProviders\Azure\Provider as AzureProvider;
 
 /**
  * Microsoft Entra ID 認証プロバイダー
@@ -17,7 +18,6 @@ use Laravel\Socialite\Contracts\Provider as SocialiteProvider;
 class MicrosoftEntraIdProvider extends BaseIdProvider
 {
     protected static ?string $driver = 'azure';
-    protected ?string $tenantId = null;
 
     /**
      * プロバイダーの新しいインスタンスを作成
@@ -35,7 +35,7 @@ class MicrosoftEntraIdProvider extends BaseIdProvider
      */
     public function tenantId(string $tenantId): static
     {
-        $this->tenantId = $tenantId;
+        $this->config['tenantId'] = $tenantId;
         return $this;
     }
 
@@ -44,20 +44,11 @@ class MicrosoftEntraIdProvider extends BaseIdProvider
      */
     public function getLoginAction(): Action
     {
-        $icon = $this->getIcon();
-
-        $action = Action::make('microsoft_login')
+        return Action::make('microsoft_login')
             ->label(__('green-auth-federation::federation.actions.login_with_microsoft'))
+            ->icon($this->getIcon())
             ->url($this->getRedirectUrl())
             ->color('gray');
-
-        if ($icon) {
-            $action->icon($icon);
-        } else {
-            $action->icon('heroicon-o-building-office');
-        }
-
-        return $action;
     }
 
     /**
@@ -65,27 +56,11 @@ class MicrosoftEntraIdProvider extends BaseIdProvider
      */
     public function redirect(): RedirectResponse
     {
-        return $this->getProvider()->redirect();
-    }
-
-    /**
-     * Socialite設定を生成
-     *
-     * Microsoft固有の設定（テナントID等）を含む
-     */
-    public function getSocialiteConfig(): array
-    {
-        $config = parent::getSocialiteConfig();
-
-        // 設定ファイルまたはプロパティからテナントIDを取得
-        $configFromFile = $this->getConfigFromFile();
-        $tenantId = $this->tenantId ?? $configFromFile['tenant_id'] ?? null;
-
-        if ($tenantId) {
-            $config['tenant_id'] = $tenantId;
-        }
-
-        return $config;
+        return $this->getProvider()
+            ->with(['prompt' => 'select_account'])
+            ->scopes(['openid', 'profile', 'email', 'offline_access', 'User.Read', ...$this->scopes])
+            ->stateless()
+            ->redirect();
     }
 
     /**
