@@ -16,6 +16,7 @@ class FederationButtonRenderer
      * フェデレーション認証ボタンをレンダリング
      * 
      * 現在のパネルのGreenAuthFederationPluginからIDプロバイダーを取得します。
+     * canLoginWithUsernameとcanLoginWithEmailが両方ともfalseの場合、「または」は表示しません。
      *
      * @return string レンダリングされたHTML
      */
@@ -32,8 +33,12 @@ class FederationButtonRenderer
             $actions[] = $provider->getLoginAction();
         }
 
+        // ログイン方法をチェック
+        $showOrLabel = $this->shouldShowOrLabel();
+
         return view('green-auth-federation::login-buttons', [
-            'actions' => $actions
+            'actions' => $actions,
+            'showOrLabel' => $showOrLabel
         ])->render();
     }
 
@@ -68,6 +73,35 @@ class FederationButtonRenderer
         /** @var GreenAuthFederationPlugin $plugin */
         $plugin = $currentPanel->getPlugin('green-auth-idp');
         return $plugin->getIdProviders();
+    }
+
+    /**
+     * 「または」ラベルを表示するかどうかを判定
+     * 
+     * canLoginWithUsernameとcanLoginWithEmailが両方ともfalseの場合はfalseを返す
+     * 
+     * @return bool 「または」ラベルを表示するかどうか
+     */
+    protected function shouldShowOrLabel(): bool
+    {
+        $currentPanel = filament()->getCurrentPanel();
+        if (!$currentPanel) {
+            return true;
+        }
+
+        if (!$currentPanel->hasPlugin('green-auth')) {
+            return true;
+        }
+
+        $plugin = $currentPanel->getPlugin('green-auth');
+        $guardName = $currentPanel->getAuthGuard();
+        
+        // 設定を取得
+        $canLoginWithEmail = config("green-auth.guards.{$guardName}.auth.login_with_email", false);
+        $canLoginWithUsername = config("green-auth.guards.{$guardName}.auth.login_with_username", false);
+        
+        // 両方ともfalseの場合は「または」を表示しない
+        return $canLoginWithEmail || $canLoginWithUsername;
     }
 
 }
