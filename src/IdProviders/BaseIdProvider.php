@@ -2,6 +2,8 @@
 
 namespace Green\Auth\IdProviders;
 
+use Closure;
+use RuntimeException;
 use Filament\Actions\Action;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +20,7 @@ abstract class BaseIdProvider
     protected array $scopes = [];
     protected bool $autoCreateUser = false;
     protected bool $autoUpdateUser = true;
-    protected ?\Closure $userMappingCallback = null;
+    protected ?Closure $userMappingCallback = null;
     protected array $config = [];
     protected ?SocialiteProvider $socialiteProvider = null;
 
@@ -62,7 +64,7 @@ abstract class BaseIdProvider
     public static function getDriver(): string
     {
         if (static::$driver === null) {
-            throw new \RuntimeException('Driver name is not configured for ' . static::class);
+            throw new RuntimeException('Driver name is not configured for ' . static::class);
         }
         return static::$driver;
     }
@@ -108,10 +110,10 @@ abstract class BaseIdProvider
         $clientId = $this->clientId ?? $configConfig['client_id'] ?? null;
         $clientSecret = $this->clientSecret ?? $configConfig['client_secret'] ?? null;
         if ($clientId === null) {
-            throw new \RuntimeException('Client ID is not configured for ' . static::class);
+            throw new RuntimeException('Client ID is not configured for ' . static::class);
         }
         if ($clientSecret === null) {
-            throw new \RuntimeException('Client Secret is not configured for ' . static::class);
+            throw new RuntimeException('Client Secret is not configured for ' . static::class);
         }
 
         return new Config(
@@ -152,7 +154,7 @@ abstract class BaseIdProvider
      */
     protected function getCurrentPanelId(): string
     {
-        return filament()->getCurrentPanel()?->getId();
+        return filament()->getCurrentOrDefaultPanel()?->getId();
     }
 
     /**
@@ -255,7 +257,7 @@ abstract class BaseIdProvider
     /**
      * ユーザー属性マッピングコールバックを定義
      */
-    public function mapUserAttributes(\Closure $callback): static
+    public function mapUserAttributes(Closure $callback): static
     {
         $this->userMappingCallback = $callback;
         return $this;

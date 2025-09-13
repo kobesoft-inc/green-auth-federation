@@ -2,6 +2,7 @@
 
 namespace Green\Auth\IdProviders;
 
+use Exception;
 use Filament\Actions\Action;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\RedirectResponse;
@@ -101,7 +102,7 @@ class GoogleIdProvider extends BaseIdProvider
             // Google画像URLのサイズパラメータを調整（高解像度取得）
             $avatarUrl = str_replace('=s96-c', '=s400-c', $avatarUrl);
             return file_get_contents($avatarUrl);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }

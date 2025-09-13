@@ -2,6 +2,7 @@
 
 namespace Green\Auth\View;
 
+use Green\Auth\IdProviders\BaseIdProvider;
 use Green\Auth\GreenAuthFederationPlugin;
 
 /**
@@ -56,12 +57,12 @@ class FederationButtonRenderer
 
     /**
      * 現在のパネルのプラグインからIDプロバイダーを取得
-     * 
-     * @return array<string, \Green\Auth\IdProviders\BaseIdProvider> IDプロバイダー配列
+     *
+     * @return array<string, BaseIdProvider> IDプロバイダー配列
      */
     protected function getProvidersFromCurrentPanel(): array
     {
-        $currentPanel = filament()->getCurrentPanel();
+        $currentPanel = filament()->getCurrentOrDefaultPanel();
         if (!$currentPanel) {
             return [];
         }
@@ -84,7 +85,7 @@ class FederationButtonRenderer
      */
     protected function shouldShowOrLabel(): bool
     {
-        $currentPanel = filament()->getCurrentPanel();
+        $currentPanel = filament()->getCurrentOrDefaultPanel();
         if (!$currentPanel) {
             return true;
         }

@@ -302,7 +302,7 @@ class FederationController
      */
     protected function getIdProvider(string $driver): ?BaseIdProvider
     {
-        $currentPanel = filament()->getCurrentPanel();
+        $currentPanel = filament()->getCurrentOrDefaultPanel();
 
         if (!$currentPanel || !$currentPanel->hasPlugin('green-auth-idp')) {
             return null;

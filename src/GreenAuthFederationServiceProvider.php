@@ -2,6 +2,8 @@
 
 namespace Green\Auth;
 
+use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Azure\Provider;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Green\Auth\View\FederationButtonRenderer;
@@ -79,8 +81,8 @@ class GreenAuthFederationServiceProvider extends ServiceProvider
      */
     protected function registerSocialiteDrivers(): void
     {
-        Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
-            $event->extendSocialite('azure', \SocialiteProviders\Azure\Provider::class);
+        Event::listen(function (SocialiteWasCalled $event) {
+            $event->extendSocialite('azure', Provider::class);
             $event->extendSocialite('google', \SocialiteProviders\Google\Provider::class);
         });
     }
